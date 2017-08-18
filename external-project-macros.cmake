@@ -22,19 +22,39 @@ macro(get_try_run_results_file tag)
 endmacro()
 
 #
+# GLEW fetch and install
+#
+macro(install_glew)
+    set(glew_url https://downloads.sourceforge.net/project/glew/glew/2.1.0/glew-2.1.0.tgz)
+    set(glew_sha256 04de91e7e6763039bc11940095cd9c7f880baba82196a7765f727ac05a993c95)
+    ExternalProject_Add(
+        glew
+        SOURCE_DIR ${source_prefix}/glew
+        URL ${glew_url}
+        URL_MD5 ""
+        CONFIGURE_COMMAND ""
+        BUILD_COMMAND ""
+        INSTALL_COMMAND ${CMAKE_COMMAND}
+    )
+endmacro()
+
+#
 # Eigen fetch and install
 #
 macro(install_eigen)
-  set(eigen_url http://www.vtk.org/files/support/eigen-3.1.0-alpha1.tar.gz)
-  set(eigen_md5 c04dedf4ae97b055b6dd2aaa01daf5e9)
+    set(eigen_url https://bitbucket.org/eigen/eigen/get/3.3.4.tar.gz)
+  # set(eigen_url http://www.vtk.org/files/support/eigen-3.1.0-alpha1.tar.gz)
+  # set(eigen_md5 c04dedf4ae97b055b6dd2aaa01daf5e9)
   ExternalProject_Add(
     eigen
     SOURCE_DIR ${source_prefix}/eigen
     URL ${eigen_url}
-    URL_MD5 ${eigen_md5}
+    URL_MD5 ""
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
-    INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory "${source_prefix}/eigen/Eigen" "${install_prefix}/eigen/Eigen" && ${CMAKE_COMMAND} -E copy_directory "${source_prefix}/eigen/unsupported" "${install_prefix}/eigen/unsupported"
+    INSTALL_COMMAND ${CMAKE_COMMAND}  -E copy_directory "${source_prefix}/eigen/Eigen" "${install_prefix}/eigen/Eigen" && ${CMAKE_COMMAND} -E copy_directory "${source_prefix}/eigen/unsupported" "${install_prefix}/eigen/unsupported"
+    CMAKE_ARGS
+      -DEIGEN_MPL2_ONLY
   )
 endmacro()
 
@@ -144,7 +164,7 @@ macro(fetch_boost)
   ExternalProject_Add(
     boost-fetch
     SOURCE_DIR ${source_prefix}/boost
-    GIT_REPOSITORY git://github.com/patmarion/boost-build
+    GIT_REPOSITORY git://github.com/linuxfreakus/boost-cmake
     GIT_TAG origin/master
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
@@ -183,11 +203,13 @@ macro(fetch_pcl)
   ExternalProject_Add(
     pcl-fetch
     SOURCE_DIR ${source_prefix}/pcl
-    GIT_REPOSITORY git://github.com/patmarion/PCL.git
-    GIT_TAG origin/android-tag
+    GIT_REPOSITORY git://github.com/PointCloudLibrary/pcl.git
+    GIT_TAG pcl-1.8.0
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
+    PATCH_COMMAND 
+      ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/patches/FindGlew.cmake ${source_prefix}/pcl/cmake/Modules/FindGLEW.cmake
   )
 endmacro()
 
@@ -211,7 +233,7 @@ macro(crosscompile_pcl tag)
     ${proj}
     SOURCE_DIR ${source_prefix}/pcl
     DOWNLOAD_COMMAND ""
-    DEPENDS pcl-fetch boost-${tag} flann-${tag} eigen
+    DEPENDS pcl-fetch boost-${tag} flann-${tag} eigen glew
     CMAKE_ARGS
       -DCMAKE_INSTALL_PREFIX:PATH=${install_prefix}/${proj}
       -DCMAKE_BUILD_TYPE:STRING=${build_type}
@@ -220,10 +242,13 @@ macro(crosscompile_pcl tag)
       -DPCL_SHARED_LIBS:BOOL=OFF
       -DBUILD_visualization:BOOL=OFF
       -DBUILD_examples:BOOL=OFF
+      -DBUILD_tools:BOOL=OFF
+      -DBUILD_apps:BOOL=OFF
       -DEIGEN_INCLUDE_DIR=${install_prefix}/eigen
       -DFLANN_INCLUDE_DIR=${install_prefix}/flann-${tag}/include
       -DFLANN_LIBRARY=${install_prefix}/flann-${tag}/lib/libflann_cpp_s.a
       -DBOOST_ROOT=${install_prefix}/boost-${tag}
+      -DGLEW_INCLUDE_DIR=${install_prefix}/glew
       -C ${try_run_results_file}
   )
 
@@ -235,6 +260,28 @@ macro(create_pcl_framework)
     add_custom_target(pclFramework ALL
       COMMAND ${CMAKE_SOURCE_DIR}/makeFramework.sh pcl
       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-      DEPENDS pcl-ios-device pcl-ios-simulator
+      DEPENDS pcl-ios-device
       COMMENT "Creating pcl.framework")
+endmacro()
+
+
+# macro to find programs on the host OS
+macro( find_host_program )
+ set( CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER )
+ set( CMAKE_FIND_ROOT_PATH_MODE_LIBRARY NEVER )
+ set( CMAKE_FIND_ROOT_PATH_MODE_INCLUDE NEVER )
+ if( CMAKE_HOST_WIN32 )
+  SET( WIN32 1 )
+  SET( UNIX )
+ elseif( CMAKE_HOST_APPLE )
+  SET( APPLE 1 )
+  SET( UNIX )
+ endif()
+ find_program( ${ARGN} )
+ SET( WIN32 )
+ SET( APPLE )
+ SET( UNIX 1 )
+ set( CMAKE_FIND_ROOT_PATH_MODE_PROGRAM ONLY )
+ set( CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY )
+ set( CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY )
 endmacro()

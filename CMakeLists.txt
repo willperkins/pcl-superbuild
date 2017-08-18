@@ -8,13 +8,14 @@ include(setup-project-variables.cmake)
 include(external-project-macros.cmake)
 
 
+install_glew()
 install_eigen()
-fetch_vtk()
+# fetch_vtk()
 fetch_pcl()
 fetch_boost()
 fetch_flann()
 
-compile_vtk()
+# compile_vtk()
 
 set(tags)
 
@@ -29,7 +30,7 @@ if(BUILD_IOS_SIMULATOR)
 endif()
 
 foreach(tag ${tags})
-  crosscompile_vtk(${tag})
+  # crosscompile_vtk(${tag})
   crosscompile_boost(${tag})
   crosscompile_flann(${tag})
   crosscompile_pcl(${tag})
