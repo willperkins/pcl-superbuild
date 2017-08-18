@@ -1,5 +1,11 @@
 CMake build scripts for cross compiling PCL and its dependencies for Android and iOS.
 
+# Building for iOS
+
+    $ mkdir build && cd build
+    $ cmake ..
+    $ make -j4
+
 ## Requirements
 
 * Android NDK, Revision 8d
