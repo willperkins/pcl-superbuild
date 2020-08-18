@@ -204,7 +204,7 @@ macro(fetch_pcl)
     pcl-fetch
     SOURCE_DIR ${source_prefix}/pcl
     GIT_REPOSITORY git://github.com/PointCloudLibrary/pcl.git
-    GIT_TAG pcl-1.8.1
+    GIT_TAG pcl-1.11.1
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
@@ -244,6 +244,8 @@ macro(crosscompile_pcl tag)
       -DBUILD_examples:BOOL=OFF
       -DBUILD_tools:BOOL=OFF
       -DBUILD_apps:BOOL=OFF
+      -DWITH_PCAP:BOOL=OFF
+      -DWITH_QT:BOOL=OFF
       -DEIGEN_INCLUDE_DIR=${install_prefix}/eigen
       -DFLANN_INCLUDE_DIR=${install_prefix}/flann-${tag}/include
       -DFLANN_LIBRARY=${install_prefix}/flann-${tag}/lib/libflann_cpp_s.a
